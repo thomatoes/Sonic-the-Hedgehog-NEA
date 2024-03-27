@@ -7,9 +7,11 @@ from utilities import Spark
 class PhysicsEntity(pygame.sprite.Sprite):
     def __init__(self,game,e_type,pos,size,image):
         super().__init__()
+
+        #General
         self.game = game
         self.type = e_type
-        self.pos = pygame.math.Vector2(pos)
+        self.pos = pygame.math.Vector2(pos) #resembles rect.x rect.y of player but for entities
         self.size = size
         self.velocity = pygame.math.Vector2(0,0)
         self.image = image
@@ -23,7 +25,7 @@ class PhysicsEntity(pygame.sprite.Sprite):
     def rect(self):
         return pygame.Rect(self.pos[0],self.pos[1],self.size[0],self.size[1])
     
-    def update(self,level_map,movement=(0,0)):
+    def update(self,level_map,movement=(0,0)): #Each frame updates entity pos if it moves/dies/does anything else
         self.collisions = {
             "left": False,
             "right": False,
@@ -35,7 +37,7 @@ class PhysicsEntity(pygame.sprite.Sprite):
         self.pos[0] += frame_movement[0]
         entity_rect = self.rect()
 
-        for rect in level_map.rect_dict:
+        for rect in level_map.rect_dict: #Check horizontal rect collision, resolve (walls)
             if entity_rect.colliderect(level_map.rect_dict[rect]):
                 if frame_movement[0]>0:
                     entity_rect.right = level_map.rect_dict[rect].left
@@ -48,7 +50,7 @@ class PhysicsEntity(pygame.sprite.Sprite):
         self.pos[1]+= frame_movement[1]
         entity_rect = self.rect()
 
-        for rect in level_map.rect_dict:
+        for rect in level_map.rect_dict: #Check vertical rect collision, resolve (ceilings and floors)
             if entity_rect.colliderect(level_map.rect_dict[rect]):
                 if frame_movement[1]>0:
                     entity_rect.bottom = level_map.rect_dict[rect].top
@@ -58,8 +60,7 @@ class PhysicsEntity(pygame.sprite.Sprite):
                     self.collisions['up']=True
                 self.pos[1] = entity_rect.y
         
-        
-        if movement[0] >0:
+        if movement[0] >0: #if facing left, flip sprite image
             self.flip = False
         if movement[0] < 0:
             self.flip = True
@@ -67,11 +68,11 @@ class PhysicsEntity(pygame.sprite.Sprite):
         self.last_movement = movement
         self.velocity[1] = min(2,self.velocity[1]+0.1)
 
-        if self.collisions['down'] or self.collisions['up']:
+        if self.collisions['down'] or self.collisions['up']: #block the entity from going through the ceiling/floor
             self.velocity[1]=0
         self.animation.update()
     
-    def render(self,surface,offset=(0,0)):
+    def render(self,surface,offset=(0,0)): #Update their image onto the screen surface
         surface.blit(pygame.transform.flip(self.animation.img(),self.flip,False) ,(self.pos[0]-offset[0]+self.animation_offset[0],self.pos[1]-offset[1]+self.animation_offset[1]))
     
     def set_action(self,action):
@@ -81,18 +82,18 @@ class PhysicsEntity(pygame.sprite.Sprite):
 
 class Chao(PhysicsEntity):
     def __init__(self,game,pos,size,image):
-        super().__init__(game,'chao',pos,size,image)
+        super().__init__(game,'chao',pos,size,image) #Inherits from PhysicsEntity
         self.initial_pos = list(pos)
 
         self.walking = 0
-        self.static_bounding_box = pygame.Rect(self.initial_pos[0] - 20, self.initial_pos[1] - 20, self.size[0] + 20, self.size[1] + 20)
+        self.static_bounding_box = pygame.Rect(self.initial_pos[0] - 20, self.initial_pos[1] - 20, self.size[0] + 20, self.size[1] + 20) #Creating invisible box around chao that it cannot pass
 
     def update(self,level_map,movement=(0,0)):
-        self.check_dist()
+        self.check_dist() #If player collides with chao, display tutorial image prompt (in main)
 
         if self.walking:
             new_x = self.pos[0] + movement[0]
-            if new_x < self.static_bounding_box.left:
+            if new_x < self.static_bounding_box.left: #If chao goes past the bounding box boundaries, flip them so they go in the opposite direction. This ensures they are "waddling" in the same position
                 self.flip = False
             elif new_x + self.size[0] > self.static_bounding_box.right:
                 self.flip = True
@@ -106,7 +107,7 @@ class Chao(PhysicsEntity):
         
         super().update(level_map,movement=movement)
     
-    def check_dist(self):
+    def check_dist(self): #Check player collision with Chao
         if self.static_bounding_box.colliderect(self.game.player.rect):
             self.game.chao_interact = True
         else:
@@ -114,7 +115,7 @@ class Chao(PhysicsEntity):
 
 class Enemy(PhysicsEntity):
     def __init__(self,game,pos,size,image):
-        super().__init__(game,'enemy',pos,size,image)
+        super().__init__(game,'enemy',pos,size,image) #Inherits from PhysicsEntity
 
         self.walking = 0
         self.cooldown = 0
@@ -122,6 +123,7 @@ class Enemy(PhysicsEntity):
     def update(self,level_map,movement=(0,0)):
         if self.walking:
             if level_map.solid_check((self.rect().x+(-8 if self.flip else 8), self.pos[1]+20)):
+                #If enemy hits an empty tile, make them turn around so they are waddling to and fro on the same block
                 movement = (movement[0]-0.5 if self.flip else 0.5,movement[1])
             else:
                 self.flip = not self.flip
@@ -129,26 +131,27 @@ class Enemy(PhysicsEntity):
             self.walking = max(0,self.walking-1)
             
             if self.cooldown > 0:
+                #For shooting projectiles - they can only shoot it every second
                 self.cooldown += -1
 
             distance = (self.game.player.rect.centerx - self.pos[0],self.game.player.rect.centery - (self.pos[1]))
             if distance[1]<5:
                 if (self.flip and distance[0]< 0): #if player is to the left
-                    if self.cooldown == 0:
+                    if self.cooldown == 0: #Shoot a projectile
                         self.game.projectiles.append([[self.rect().centerx,self.rect().centery],-1.5,0])
-                        for i in range(4):
+                        for i in range(4): #Generate sparks after shooting projectile
                             self.game.sparks.append(Spark(self.game.projectiles[-1][0], random.random() -0.5 + math.pi, 2+random.random()))
                         self.cooldown = 60
 
                 if (not self.flip and distance[0]>0): #player is to the right and looking right
-                    if self.cooldown == 0:
+                    if self.cooldown == 0: #Shoot a projectile
                         self.game.projectiles.append([[self.rect().centerx,self.rect().centery],1.5,0])
                         for i in range(4):
                             self.game.sparks.append(Spark(self.game.projectiles[-1][0],random.random() -0.5, 2+random.random()))
                         self.cooldown = 60
 
 
-        elif random.random()<0.01:
+        elif random.random()<0.01: # So enemy is not always walking. Looks like they walk, then stop, then walk again
             self.walking = random.randint(30,120)
         super().update(level_map,movement=movement)
 
@@ -158,14 +161,14 @@ class Enemy(PhysicsEntity):
             self.set_action('idle')
         
         if (self.game.player.is_jumping or self.game.player.is_rolling or self.game.player.is_homingdash) and not self.game.player.is_hurt and not self.game.player.is_dead:
-            if self.rect().colliderect(self.game.player.rect):
+            if self.rect().colliderect(self.game.player.rect): #If player collides with enemy in a state they can kill the enemy
                 for i in range(20):
                     angle = random.random() *math.pi *2
                     self.game.sparks.append(Spark(self.rect().center,angle,2+random.random()))
                 
                 self.game.sparks.append(Spark(self.rect().center,0,5+random.random()))
                 self.game.sparks.append(Spark(self.rect().center,math.pi,5+random.random()))
-                return True
+                return True #Remove from the screen
     
     def render(self,surface,offset=(0,0)):
         super().render(surface,offset=offset)
@@ -199,7 +202,6 @@ class RingObject():
 
     def rect(self):
         return pygame.Rect(self.pos[0],self.pos[1],self.size[0],self.size[1])
-    
 
     def update(self,level_map,movement=(0,0)):
         self.collisions = {
@@ -208,7 +210,7 @@ class RingObject():
             "up": False,
             "down": False
         }
-         # Adjust the decrement value as needed
+         # Decrements velocity as time passes
         frame_movement = (movement[0]+self.velocity[0],movement[1]+self.velocity[1])
 
         self.pos[0] += frame_movement[0]
@@ -227,7 +229,7 @@ class RingObject():
         self.pos[1]+= frame_movement[1]
         entity_rect = self.rect()
 
-        for rect in level_map.rect_dict:
+        for rect in level_map.rect_dict: #Checks collision
             if entity_rect.colliderect(level_map.rect_dict[rect]):
                 if frame_movement[1]>0:
                     entity_rect.bottom = level_map.rect_dict[rect].top
@@ -243,7 +245,7 @@ class RingObject():
         if self.collisions['down'] or self.collisions['up']:
             self.velocity[1]=0
         
-        self.velocity[0] *= 0.99
+        self.velocity[0] *= 0.99 #Decrements speed
         self.animation.update()
 
         if not self.timer_started:
@@ -256,7 +258,6 @@ class RingObject():
         if elapsed_time >= self.timer:
             return True 
         
-
     def render(self,surface,offset=(0,0)):
         surface.blit(pygame.transform.flip(self.animation.img(),self.flip,False) ,(self.pos[0]-offset[0]+self.animation_offset[0],self.pos[1]-offset[1]+self.animation_offset[1]))
     
@@ -269,9 +270,9 @@ class Player(pygame.sprite.Sprite, Collision):
     def __init__(self,pos,game):
         super().__init__()
         self.game = game
-        self.image = self.game.assets['player'] #change
+        self.image = self.game.assets['player']
 
-        self.rect = self.image.get_frect(center = pos) #pygame.Rect(32,64,32,40)
+        self.rect = self.image.get_frect(center = pos) 
         self.height = self.image.get_height()
         self.angle = 0
 
@@ -453,6 +454,7 @@ class Player(pygame.sprite.Sprite, Collision):
         self.direction.y += self.speed_y
 
     def spring_jump(self):
+        #Modification of jumping method. Jumps higher.
         self.speed_y += self.spring_constant
         if self.speed_y <0 and self.speed_y > -6.5:
             self.speed_y -= (self.speed_y //0.125)/256
@@ -470,18 +472,17 @@ class Player(pygame.sprite.Sprite, Collision):
     def spindash(self):
         self.direction.y = 0
         self.spinrev -= (self.direction.x // 0.125) /256
-        self.spinrev = 8 + (self.spinrev//2)
+        self.spinrev = 8 + (self.spinrev//2) #Acceleration of spindash
         # Apply spin rev and friction based on the player's direction
         if not self.flip:
             self.speed = max(self.spinrev - self.roll_friction_speed - self.roll_deceleration_speed, 0)
         elif self.flip:
             self.speed = min(-self.spinrev + self.roll_friction_speed + self.roll_deceleration_speed, 0)
 
-        # Update the player's direction (optional, depending on your requirements)
         self.is_spindashing = False
 
     def homingdash(self):
-        if self.is_homingdash:
+        if self.is_homingdash: #Accelerate in mid air
             self.homing_acceleration -= (self.direction.x // 0.125)/256
             if self.direction.x > 0:
                 self.game.music.play_sound_effect(self.game.assets['sound_effect/homingdash'])
@@ -491,11 +492,11 @@ class Player(pygame.sprite.Sprite, Collision):
                 self.game.music.play_sound_effect(self.game.assets['sound_effect/homingdash'])
                 self.speed = -8 - (self.homing_acceleration//2)
                 self.speed = min(self.speed + self.air_drag, 0)
-        
    
         self.direction.x += self.speed
 
     def rolling(self):
+        #If moving then rolling, decrement speed until 0
         if self.angle == 0 and (self.direction.x >0 or self.speed >0):
             self.speed -= self.roll_deceleration_speed + self.roll_friction_speed
             if self.speed < 0:
@@ -504,21 +505,22 @@ class Player(pygame.sprite.Sprite, Collision):
             self.speed += self.roll_deceleration_speed + self.roll_friction_speed
             if self.speed >0:
                 self.speed = 0
-       
+
+        #If on terraformed tile, check if incline or depression
         if self.angle > 0:
-            self.speed -= self.slope_factor_rollup
+            self.speed -= self.slope_factor_rollup #Rolls faster backwards
             if self.speed < -self.top_speed:
                 self.speed = -self.top_speed
         if self.angle < 0:
-            self.speed += self.slope_factor_rolldown
+            self.speed += self.slope_factor_rolldown #Rolls faster forwards
             if self.speed > self.top_speed:
                 self.speed = self.top_speed   
-        
+
+        #Rolling is true if speed>0 or on a tile where angle!=0
         self.is_rolling = abs(self.speed)>0 or self.angle != 0
-        
-        #self.rect.x += self.speed
     
     def rebound(self):
+        #When landing on top of enemy in jump form, jump backwards into the air (like a double jump)
         if not self.is_grounded and self.fall:
             self.speed_y += self.jump_force*2
             if self.speed_y < 0 and self.speed_y > -4.0:
@@ -531,7 +533,7 @@ class Player(pygame.sprite.Sprite, Collision):
         self.direction.y += self.speed_y
     
     def hurt(self):
-        if self.is_hurt:
+        if self.is_hurt: # player gets hit backwards in oppposite direction they were facing
             self.game.music.play_sound_effect(self.game.assets['sound_effect/sonic_ow'])
             a = 1 if self.flip else -1
 
@@ -540,34 +542,33 @@ class Player(pygame.sprite.Sprite, Collision):
 
             self.speed_y = -self.hurt_y_force * a
             self.speed = -self.hurt_x_force  if self.flip else self.hurt_x_force
-            self.drop_rings()
+            self.drop_rings() #lose all rings
             self.game.music.play_sound_effect(self.game.assets['sound_effect/loserings'])
-            self.control_lock(2000)
+            self.control_lock(2000) #Player cant move for a few frames
         
         self.direction.y += self.speed_y
     
     def drop_rings(self):
-        if self.ring_count>20:
+        if self.ring_count>20: #Will only drop 20 rings max to prevent cluster of many lost rings - increases memory usage as more entities in screen
             for i in range(20):
-                rand_speed = random.uniform(-4, 4)  # Adjust the range as needed
-                angle_variation = random.uniform(-0.5, 0.5)  # Adjust the range as needed
+                rand_speed = random.uniform(-4, 4)  # Randomise speed
+                angle_variation = random.uniform(-0.5, 0.5)  # Randomise angles
                 ring = RingObject(self.game,"ring",self.rect.center,(16,16),'levels/level_data/rings/ring/ring1.png')
                 ring.set(rand_speed,angle_variation)
                 self.game.rings.append(ring)
         else:
             for i in range(self.ring_count):
-                rand_speed = random.uniform(-4, 4)  # Adjust the range as needed
-                angle_variation = random.uniform(-0.5, 0.5)  # Adjust the range as needed
+                rand_speed = random.uniform(-4, 4)  # Randomise speed
+                angle_variation = random.uniform(-0.5, 0.5)  # Randomise angles
                 ring = RingObject(self.game,"ring",self.rect.center,(16,16),'levels/level_data/rings/ring/ring1.png')
                 ring.set(rand_speed,angle_variation)
                 self.game.rings.append(ring)
 
     def die(self):
-        if self.game.lives > 0 and self.is_dead:
+        if self.game.lives > 0 and self.is_dead: #To allow the die animation to play
             self.control_lock(4000)
             self.speed = 0
             self.direction.x = 0
-
     
     def die_anim(self):
         self.speed_y = -5
@@ -628,6 +629,7 @@ class Player(pygame.sprite.Sprite, Collision):
         self.rect.x += self.speed
         self.apply_gravity()
 
+        #Checks animation state
         self.animation.update()
         if self.start:
             self.set_action('start')
@@ -665,8 +667,3 @@ class Player(pygame.sprite.Sprite, Collision):
             self.idle = True
         else:
             self.set_action('idle')
-
-        print ("player speed: ",self.speed)
-        print ("player angle: ",self.angle)
-
-            
