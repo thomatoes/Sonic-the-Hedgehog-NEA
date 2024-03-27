@@ -43,26 +43,30 @@ class TerrainTile(pygame.sprite.Sprite):
         self.image_to_height_array()
     
     def image_to_height_array(self):
+        #Taking the pixels from the image
+        # pixels where the alpha (transparency) value is not 0, this means that there is no pixel there and it is transparent
         bitmap = numpy.array(self.image_png)
 
-        bitmap = bitmap[:,:,-1] > 20
+        bitmap = bitmap[:,:,-1] > 20 #If alpha value > 20 append the pixel to the numpy array
         self.height_map = numpy.zeros(bitmap.shape[1], dtype=int)
 
-        for x, col in enumerate(bitmap.T):
-            for y, is_ground in enumerate(col): # 
+        for x, col in enumerate(bitmap.T): #Go through through the array
+            for y, is_ground in enumerate(col): 
                 if is_ground:
                     self.height_map[x] = int(y)
                     break
-        
+
+        #An array of the heights of the pixel value in each 64x64 px square is returned. This goes from top to bottom
+        #Reverse the array so the height is from bottom to top instead
         for i in range(len(self.height_map)):
             self.height_map[i] = 64 - self.height_map[i]
             
     
     def set_angle_array(self,angle_dict):
-        # Get image path
-        #With respect to angle dict
+        # Get angle of terraformed platforms
+        #With respect to image path name
 
-        self.angle_array = angle_dict.get(self.image_name, [0]*64)
+        self.angle_array = angle_dict.get(self.image_name, [0]*64) #If not terraformed pad with 0s
     
     def get_angle_array(self):
         return (self.angle_array)
@@ -95,12 +99,13 @@ class AnimatedTile(Tile):
         self.frame_index = 0
         self.image = self.frames[self.frame_index]
     
-    def animate(self):
+    def animate(self): #Loops through the frames of the images for each animated tile
         self.frame_index += 0.15
         if self.frame_index >= len(self.frames):
             self.frame_index = 0
         self.image = self.frames [int(self.frame_index)]
 
+#class for ring entities placed on the map
 class Rings(AnimatedTile):
     def __init__(self,size,x,y,display_surface,path):
         super().__init__(size,x,y,display_surface,path)
@@ -121,11 +126,12 @@ class Rings(AnimatedTile):
             self.frame_index = 0
         self.image = self.frames[int(self.frame_index)]
         
-
+#class for spring entities placed on map
 class Spring(Tile):
     def __init__(self, size, x, y, display_surface,image):
         super().__init__(size, x, y, display_surface)
 
+        #Image and surface
         self.image = image
         self.rect = self.image.get_rect(topleft = (x,y))
         self.mask = pygame.mask.from_surface(self.image)    
@@ -140,24 +146,26 @@ class GoalPost(Tile,Animation):
     def __init__(self,size,x,y,display_surface,image,game):
         super().__init__(size,x,y,display_surface)
 
+        #General
         self.game = game 
         self.type = "goalpost"
-        
+
+        #Image set up
         self.image= image
         self.rect = self.image.get_rect(topleft=(x,y))
         self.mask = pygame.mask.from_surface(self.image)
 
+        #Animation
         self.frame_index = 0
         self.spin = False
         self.finish = False
-
-        #animation
         self.animation_offset = (-3,-3) #to account for padding in different images
         self.flip = False
 
         self.images = game.assets['goalpost/spin'].copy()
 
     def animation(self):
+        #going through the animation of the goal post until completed after a set timeframe
         if self.spin:
             self.frame_index += 0.45
             if self.frame_index>= len(self.images):
@@ -169,7 +177,7 @@ class GoalPost(Tile,Animation):
 
 class PalmtreeAnimated(AnimatedTile):
     def __init__(self,size,x,y,display_surface,path):
-        super().__init__(size,x,y,display_surface,path)
+        super().__init__(size,x,y,display_surface,path) #inheriting from animated tile
     
     def animate_slower(self):
         self.frame_index += 0.09
