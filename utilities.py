@@ -1,8 +1,6 @@
 import pygame
 import math
 
-from itertools import cycle
-
 vertical_tile_number = 32
 tile_size = 16
 
@@ -42,6 +40,9 @@ class Spark:
         return not self.speed
     
     def render(self,surface,offset=(0,0)):
+        #Creating a small white polygon based on the angle, the speed and the camera offset
+        #The vertices of the polygon are variable
+        #sin --> vertical, cosine --> horizontal
         render_points = [
             (self.pos[0] + math.cos(self.angle) * self.speed* 6 - offset[0], self.pos[1]+ math.sin(self.angle)*self.speed*6 - offset[1]),
             (self.pos[0] + math.cos(self.angle + math.pi * 0.5)*self.speed*0.5 -offset[0],self.pos[1]+math.sin(self.angle + math.pi * 0.5)*self.speed*0.5-offset[1]),
@@ -51,6 +52,7 @@ class Spark:
 
         pygame.draw.polygon(surface,(255,255,255),render_points)
 
+#Class for leaf particles 
 class Particle:
     def __init__(self,game,pos,velocity=[0,0],frame=0):
         self.game = game
@@ -61,6 +63,8 @@ class Particle:
     
     def update(self):
         kill = False
+
+        #Cycle through animation until complete.
         if self.animation.done:
             kill = True
         
