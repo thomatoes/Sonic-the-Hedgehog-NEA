@@ -1,6 +1,6 @@
 from support import import_file_names
 
-
+#Location of all the comma seperated value files for the respective layers
 level = {
     'terrain': 'levels/level1/terrain_tiles_Level.csv',
     'rings': 'levels/level1/terrain_tiles_rings.csv',
@@ -84,6 +84,8 @@ tile_ID = {
     '64slopesand4.png':'64',
     '65slopesand5.png':'65',
 }
+
+#Location of all the png files for each respective tile image
 tiles = {
     '01btree4.png': 'levels/level_data/tiles/01btree4.png',
     '02btree5.png': 'levels/level_data/tiles/02btree5.png',
@@ -157,6 +159,7 @@ tiles = {
     '70tree.png': "levels/level_data/tiles/70tree"
 }
 
+#Tile angles for the tiles that are terraformed
 tile_angles = {
     '04down_slope.png': [0]*6+[-34]*3+[0]*7+[-26]*9+[0]*4+[-28]*35,#angle of depression
     '05down_slope1.png':[-45]*64,#angle of depression
