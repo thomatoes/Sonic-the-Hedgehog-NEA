@@ -1,6 +1,5 @@
 import pygame
 
-
 class CameraGroup(pygame.sprite.Group):
     def __init__(self, displaySurface):
         super().__init__()
@@ -21,7 +20,7 @@ class CameraGroup(pygame.sprite.Group):
         self.camera_rect = pygame.Rect(l,t,w,h)
 
     def box_camera(self,target):
-
+        #If player moves further away from the box boundaries, move the camera box
         if target.rect.left < self.camera_rect.left:
             self.camera_rect.left = target.rect.left
         if target.rect.right > self.camera_rect.right:
@@ -35,10 +34,13 @@ class CameraGroup(pygame.sprite.Group):
         self.offset.y = self.camera_rect.top - self.camera_borders['top']
 
     def center_camera(self,target):
+        #Always keep the player in the centre (target)
         self.offset.x = target.rect.centerx - (self.display_surface.get_size()[0]//2)
         self.offset.y = target.rect.centery - (self.display_surface.get_size()[1]//2)
         
     def parallax_scroll(self,background_objects):
+        #Displays the objects in the background and moves them according to the speed of the multiplier set
+        #Moves the objects with the offset of the camera
         for background_object in background_objects:
             obj_image = background_object[2]
             obj_rect = pygame.Rect(
@@ -47,12 +49,10 @@ class CameraGroup(pygame.sprite.Group):
                 background_object[1][2],
                 background_object[1][3]
                 )
-            if background_object[0] == 0.5:
-                #pygame.draw.rect(self.display_surface,(14,222,150), obj_rect) 
+            if background_object[0] == 0.5: 
                 self.display_surface.blit(obj_image, obj_rect)
                 #Use this when using images
             else:
-                #pygame.draw.rect(self.display_surface,(9,91,85),obj_rect)
                 self.display_surface.blit(obj_image, obj_rect)
                 
     def custom_draw(self,player):
