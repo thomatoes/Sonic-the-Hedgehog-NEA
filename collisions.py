@@ -19,7 +19,6 @@ class Collision:
             # and i is the index, and floor is the value at that index
 
             collide,pads_on = self.check_floor_initial(pads_on,(i,floor),level)
-            #collide,pads_on = self.check_floor_initial_mask(pads_on,(i,floor),level)
 
             #It passes pads_on, a tuple (i, floor), and level as arguments
             # The result is unpacked into collide and pads_on
@@ -56,9 +55,9 @@ class Collision:
             rect = level.rect_dict[key]
             
             coord = (rect.x,rect.y) #topleft is the coordinates
-            cell_heights = level.height_dict.get(coord)#, [0]*level.cell_size[0]) #level.height_dict.get[coord]
-            x_loc_in_cell = floor.x- key[0] #*64 #level.cell_size[0]
-            offset = cell_heights[x_loc_in_cell] #cell_heights[min(x_loc_in_cell, len(cell_heights) - 1)]
+            cell_heights = level.height_dict.get(coord)
+            x_loc_in_cell = floor.x- key[0]
+            offset = cell_heights[x_loc_in_cell] 
             
             angle_array = level.angle_dict.get(coord)
             self.angle = angle_array[x_loc_in_cell]
@@ -66,7 +65,7 @@ class Collision:
             if change == None:
                 change = (key[1]+1)-offset # find the change in offsets and coordinates for thesensros
             else:
-                change = min((key[1]+1)-offset,change) #(key[1]+1*level.cell_size[1])-offset,change
+                change = min((key[1]+1)-offset,change)
         
         return change #y_coordinate 
 
@@ -139,7 +138,7 @@ class Collision:
     
     def collide_with(self,level,rect,mask,offset):
        #The real collision detection occurs here. Initial tests are done with
-        #rect collision and if positive further tests are done with masks."""
+        #rect collision and if positive further tests are done with masks.
         test = pygame.Rect((rect.x+offset[0],rect.y+offset[1]),rect.size)
         self.collide_ls = []
         for cell,rec in level.rect_dict.items(): #Rect collision first - player rect and tile rect
