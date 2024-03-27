@@ -72,13 +72,19 @@ class Level:
     def create_tile_group(self,layout,type):
         sprite_group = pygame.sprite.Group()
 
+        #Goes through each of the csv layout
+        #Number represents Tile ID
+        #Use Tile ID to index the tile meant to be placed there in another array
+        #Create object of the tile
+        #Append to sprite group 
+        
         for row_index,row in enumerate(layout):
             for col_index,val in enumerate(row):
                 if val != '-1':
                     x = col_index * tile_size
                     y = row_index * tile_size
 
-                    if type == 'terrain':
+                    if type == 'terrain': 
                         terrain_tile_list_image = import_graphics('levels/level_data/tiles') 
                         terrain_image_list_names = import_file_names('levels/level_data/tiles')
                         
@@ -145,6 +151,7 @@ class Level:
         return sprite_group
     
     def reset_entity(self):
+        #Simply resets the positions of the tiles by reading the csv files from the beginning again
         #rings tiles
         rings_layout = import_csv_layout(self.level_data['rings'])
         self.rings_sprites = self.create_tile_group(rings_layout, 'rings')
@@ -175,6 +182,9 @@ class Level:
     
     
     def create_rect_dictionary(self):
+        #creates rects for each sprite in the terrain tiles
+        #This will be used for collision detection
+        
         rect_dict = {}
         for tile in self.terrain_sprites:
             x,y = tile.get_tile_id()[0][0], tile.get_tile_id()[0][1]
@@ -183,6 +193,9 @@ class Level:
         return rect_dict
     
     def create_height_dictionary(self):
+        #Creates height dict for each sprite in the terrain tiles
+        #This will be used for player positioning on terraformed tiles
+        
         height_dict = {}
         for tile in self.terrain_sprites:
             x,y = tile.get_tile_id()[0][0], tile.get_tile_id()[0][1]
@@ -191,6 +204,9 @@ class Level:
         return height_dict
         
     def create_mask_dictionary(self):
+        #Creates mask dict for each sprite in the terrain tiles
+        #This will be used in collision detection
+        
         mask_dict = {}
         for tile in self.terrain_sprites:
             x,y = tile.get_tile_id()[0][0], tile.get_tile_id()[0][1]
@@ -199,6 +215,10 @@ class Level:
         return mask_dict
     
     def create_angle_dictionary(self):
+        #Creates angle dict for each sprite in the terrain tiles
+        #This will be used for player positioning on terraformed tiles
+        #Also will be used for player mechanics (rolling up/down slopes)
+        
         angle_dict = {}
         for tile in self.terrain_sprites:
             x,y = tile.get_tile_id()[0][0], tile.get_tile_id()[0][1]
@@ -207,12 +227,17 @@ class Level:
         return angle_dict
 
     def solid_check(self,pos):
+        #Checks if the tiles around the passed position of the target exist and if they are solid
+        #If not, it is air and cannot collide with air
+        
         for rect_key, rect_value in self.rect_dict.items():
             if rect_value.collidepoint(pos):
                 return True
         return False
 
     def update(self, camera):
+        #Updates position of all layers onto screen to move with camera - level traversal
+        
         for tile in self.background_tile_sprites:
             tile_position = (tile.rect.x - camera.offset.x, tile.rect.y - camera.offset.y)
             self.display_surface.blit(tile.image, tile_position)
