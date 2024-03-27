@@ -23,7 +23,8 @@ def _circlepoints(r):
     points.sort()
     return points
 
-
+#Creates 2 surfaces - normal text, and text to be outlined
+# then using symmetry to centre the text on top of the outline by calling the circlepoints_ function
 def render(text, font, gfcolor=pygame.Color('white'), ocolor=(0, 0, 0), opx=2):
     textsurface = font.render(text, True, gfcolor).convert_alpha()
     w = textsurface.get_width() + 2 * opx
@@ -41,8 +42,7 @@ def render(text, font, gfcolor=pygame.Color('white'), ocolor=(0, 0, 0), opx=2):
 
     surf.blit(textsurface, (opx, opx))
     return surf
-
-
+    
 class Display:
     def __init__(self,game):
         self.game = game
@@ -67,10 +67,12 @@ class Display:
         self.lives = 3
     
     def get_score(self,score):
+        # Format score to have leading zeros
         self.score_str = str(score).zfill(5)
 
     def get_rings(self, ring_count):
         self.ring_count = int(ring_count)
+        # Format rings to have leading zeros
         self.ring_count_str = str(self.ring_count).zfill(3)
     
     def get_lives(self,lives):
@@ -86,6 +88,8 @@ class Display:
     
 
     def ingame_display(self, screen,ring_count,score,lives,time):
+        #Displays everything onto the screen
+        #Checks every frame
         if not self.game.end_game:
             self.get_time(time=time)
         self.get_rings(ring_count)
