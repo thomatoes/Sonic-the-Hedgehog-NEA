@@ -1,5 +1,7 @@
 import pygame
 
+#This function efficiently generates a list of integer coordinates representing points on the circumference
+#of a circle with radius r using Bresenham's Circle Drawing Algorithm to optimize the calculation process
 _circle_cache = {}
 def _circlepoints(r):
     r = int(round(r))
@@ -20,6 +22,7 @@ def _circlepoints(r):
     points += [(x, -y) for x, y in points if y]
     points.sort()
     return points
+
 
 def render(text, font, gfcolor=pygame.Color('white'), ocolor=(0, 0, 0), opx=2):
     textsurface = font.render(text, True, gfcolor).convert_alpha()
