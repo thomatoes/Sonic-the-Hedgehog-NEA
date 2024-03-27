@@ -13,15 +13,15 @@ class Music:
         self.rings = "audio/sonic_ring_sound_effect.mp3"
         self.spring = "audio/sonic-spring.mp3"
 
-    def play_background_music(self):
+    def play_background_music(self): #Plays main music in bg
         pygame.mixer.music.load(self.green_grove)
         pygame.mixer.music.play(-1)
     
-    def play_music(self,music):
+    def play_music(self,music): #Plays any music file passed in parameter
         pygame.mixer.music.load(music)
         pygame.mixer.music.play(-1)
   
-    def play_sound_effect(self,sound_file):
+    def play_sound_effect(self,sound_file): #Plays sound effect. Does not overwrite the bg music playing
         sound = pygame.mixer.Sound(sound_file)
         sound.play()
     
