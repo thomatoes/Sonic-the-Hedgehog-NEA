@@ -931,8 +931,6 @@ class Game:
                     if (self.player.is_jumping or self.player.is_homingdash):
                         self.player.rebound() #Go back up into the air as if the player is bouncing off of the enemy
 
-                
-
                 if kill: #Removes the enemy off of the screen
                     self.player.score += 1000
                     self.music.play_sound_effect(random.choice(self.sonic_sounds))
